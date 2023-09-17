@@ -23,6 +23,7 @@ visitable_lot = {}
 # visitable = [[True] * (m-2)] * (n-2)
 visitable = []
 
+
 for i in range(n-2):
     temp = []
     for j in range(m-2):
@@ -76,14 +77,19 @@ deltas = [[-1, 0], [1, 0], [0, 1], [0, -1]]
 queue = [{"r": [curr_r["r_idx"], curr_r["c_idx"]],
           "b": [curr_b["r_idx"], curr_b["c_idx"]], "level": 1}]
 
+
 turns = -1
+visited = [[[[False]*(m-2) for _ in range(n-2)]
+            for _ in range(m-2)] for _ in range(n-2)]
 while len(queue) != 0:
+
     element = queue.pop(0)  # this takes the first element
     r_row = element["r"][0]
     r_col = element["r"][1]
 
     b_row = element["b"][0]
     b_col = element["b"][1]
+    visited[r_row][r_col][b_row][b_col] = True
 
     is_finished = False
 
@@ -172,7 +178,7 @@ while len(queue) != 0:
 
         # print(r_next_row, r_next_col, b_next_row, b_next_col)
 
-        elif not is_r_out and not is_b_out:
+        elif not is_r_out and not is_b_out and not visited[r_next_row][r_next_col][b_next_row][b_next_col]:
             # continue to find answer
             queue.append({"r": [r_next_row, r_next_col],
                           "b": [b_next_row, b_next_col], "level": element["level"] + 1})
