@@ -75,96 +75,63 @@ def get_wall(r, c):
     real_c = c - 1
     return grids[real_r][real_c]
 
+# u l b r
+dx = [-1, 0, 1, 0]
+dy = [0, -1, 0, 1]
+
 def bfs_dis(start_r, start_c, destinations):
     # destinations is a dict with pos as keys
+    global N
     global grids
-    visited = {} # this is a dict of pos_id
+    global dx
+    global dy
     queue = []
+    visited = [[False] * N for _ in range(N)]
     queue.append([start_r, start_c, 0]) # start position
-    # we also input the level
-    # we have to check for u, l, b, r
-    u_delta = [-1, 0]
-    l_delta = [0, -1]
-    b_delta = [1, 0]
-    r_delta = [0, 1]
+    visited[start_r - 1][start_c - 1] = True
 
-    least_distance = 500
-
+    least_distance = 5000
     nearest_des = []
 
-    has_at_least_one_el = False
     while len(queue) != 0:
         explore = queue.pop(0)
-        explore_pos_id = gen_pos_id(explore[0], explore[1])
-        # if visited.get(explore_pos_id):
-        #     continue
+        r, c, dis = explore
+        r_c = gen_pos_id(r,c)
 
-        distance = explore[2]
-        if least_distance < distance:
+        if least_distance < dis:
             break
-        if destinations.get(explore_pos_id):
-            if not has_at_least_one_el:
-                nearest_des.append(explore_pos_id)
+
+        if destinations.get(r_c) is not None:
+            if len(nearest_des) == 0:
+                nearest_des.append(r_c)
             else:
                 first_el = nearest_des[0]
                 first_r, first_c = parse_pos_id(first_el)
-                if explore[0] < first_r:
-                    nearest_des.insert(0, explore_pos_id)
-                elif explore[0] == first_r:
-                    if explore[1] < first_c:
-                        nearest_des.insert(0, explore_pos_id)
+                if r < first_r:
+                    nearest_des.insert(0, r_c)
+                elif r == first_r:
+                    if c < first_c:
+                        nearest_des.insert(0, r_c)
                     else:
-                        nearest_des.append(explore_pos_id)
+                        nearest_des.append(r_c)
                 else:
-                    nearest_des.append(explore_pos_id)
-                has_at_least_one_el = True
-            if least_distance > distance:
-                least_distance = distance
-        # print(explore_pos_id, distance, least_distance)
-        visited[explore_pos_id] = True
+                    nearest_des.append(r_c)
+            least_distance = dis
 
-        u_r = explore[0] + u_delta[0]
-        u_c = explore[1] + u_delta[1]
-        u_id = gen_pos_id(u_r, u_c)
-        u_visited = visited.get(u_id)
-        if get_wall(u_r, u_c) == 0 and u_visited is None:
-            if least_distance > distance + 1:
-                visited[u_id] = False
-                queue.append([u_r, u_c, distance + 1])
 
-        l_r = explore[0] + l_delta[0]
-        l_c = explore[1] + l_delta[1]
-        l_id = gen_pos_id(l_r, l_c)
-        l_visited = visited.get(l_id)
-        if get_wall(l_r, l_c) == 0 and l_visited is None:
-            if least_distance > distance + 1:
-                visited[l_id] = False
-                queue.append([l_r, l_c, distance + 1])
+        for i in range(4):
+            nr = r + dx[i]
+            nc = c + dy[i]
+            n_id = gen_pos_id(nr, nc)
+            if get_wall(nr, nc) != 0:
+                continue
+            if visited[nr - 1][nc - 1]:
+                continue
+            visited[nr - 1][nc - 1] = True
+            queue.append([nr, nc, dis + 1])
 
-        b_r = explore[0] + b_delta[0]
-        b_c = explore[1] + b_delta[1]
-        b_id = gen_pos_id(b_r, b_c)
-        b_visited = visited.get(b_id)
-        if get_wall(b_r, b_c) == 0 and b_visited is None:
-            if least_distance > distance + 1:
-                visited[b_id] = False
-                queue.append([b_r, b_c, distance + 1])
-
-        r_r = explore[0] + r_delta[0]
-        r_c = explore[1] + r_delta[1]
-        r_id = gen_pos_id(r_r, r_c)
-        r_visited = visited.get(r_id)
-        if get_wall(r_r, r_c) == 0 and r_visited is None:
-            if least_distance > distance + 1:
-                visited[r_id] = False
-                queue.append([r_r, r_c, distance + 1])
 
     return least_distance, nearest_des
-
-
-
-
-
 
 
 def find_passenger():
@@ -176,6 +143,7 @@ def find_passenger():
     dis, des_list = bfs_dis(taxi_r, taxi_c, passengers) # passengers is a dict
     pass_r = -1
     pass_c = -1
+    # print(des_list)
     des_list_len = len(des_list)
     if des_list_len == 0:
         return -1, -1, -1
