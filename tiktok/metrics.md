@@ -1,0 +1,5 @@
+Bytedance, renowned for its innovative products like TikTok, is expanding its financial analytics capabilities to offer more comprehensive insights for its creators and partners. The task is to optimize a data processing pipeline for TikTok's financial analytics platform. The objective is to enhance the module to efficiently identify the longest 'good subarray' of financial metrics meeting a specific criterion.
+
+Given an array financialMetrics of size n, where each element represents a numerical financial metric, and a threshold value limit, the goal is to find the maximum length of a non-empty consecutive sequence of data points in financialMetrics that satisfies the following condition:
+
+Each data point in the sequence must be greater than (limit / length of the sequence). This sequence is termed a 'good subarray' for analysis. If there is no 'good subarray' in the dataset, the function should return -1.
