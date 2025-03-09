@@ -21,7 +21,7 @@ def traverse(root):
     if root.left is not None:
         traverse(root.left)
 
-    if len(sorting) > 1 and root.val < sorting[len(sorting) - 1]:
+    if len(sorting) >= 1 and root.val < sorting[len(sorting) - 1]:
         isValidResult = False
 
     sorting.append(root.val)
