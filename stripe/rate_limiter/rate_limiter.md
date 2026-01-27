@@ -21,55 +21,32 @@ Implement a basic `RateLimiter` class that counts hits for each key using a slid
 ```python
 class RateLimiter:
     def __init__(self, max_requests: int, window_seconds: int):
-        """
-        Initialize the rate limiter.
-
-        Args:
-            max_requests: Maximum requests allowed in the window
-            window_seconds: Size of the time window in seconds
-        """
         pass
 
     def hit(self, key: str, timestamp: int) -> None:
-        """Record a request for a key at a specific time."""
         pass
 
     def allowed(self, key: str, timestamp: int) -> bool:
-        """
-        Check if the key is allowed to make a request.
-
-        Returns:
-            True if hits in current window < max_requests, False otherwise
-        """
         pass
 ```
 
 ### Example
 
 ```
-Input:
-  RateLimiter(max_requests=3, window_seconds=10)
-  hit("user_1", 1)
-  hit("user_1", 2)
-  allowed("user_1", 3)  -> True (2 hits in window)
-  hit("user_1", 3)
-  allowed("user_1", 4)  -> False (3 hits = limit reached)
-  allowed("user_1", 12) -> True (hits at t=1,2 are outside window)
-  allowed("user_2", 5)  -> True (new key, no past hits)
+RateLimiter(max_requests=3, window_seconds=10)
+
+hit("user_1", 1)
+hit("user_1", 2)
+allowed("user_1", 3)  -> True (2 hits in window)
+hit("user_1", 3)
+allowed("user_1", 4)  -> False (3 hits = limit reached)
+allowed("user_1", 12) -> True (hits at t=1,2 are outside window)
+allowed("user_2", 5)  -> True (new key, no past hits)
 ```
-
-### Constraints
-
-- Timestamps are positive integers (seconds)
-- Keys are non-empty strings
-- `hit()` records requests even if over the limit
-- `allowed()` checks past hits, not including the current request
 
 ---
 
 ## Part 2: Memory Optimization
-
-### Problem
 
 In real systems, users may stop sending requests for extended periods. Your rate limiter needs to efficiently remove old timestamps to prevent memory from filling up with stale data.
 
@@ -79,17 +56,9 @@ In real systems, users may stop sending requests for extended periods. Your rate
 - Memory usage should scale with active requests, not all historical requests
 - Cleanup must not significantly slow down operations
 
-### Goals
-
-1. Implement efficient cleanup of old timestamps
-2. Delete empty key entries to save memory
-3. Achieve amortized O(1) time complexity for operations
-
 ---
 
 ## Part 3: Edge Cases
-
-### Problem
 
 Handle difficult real-world scenarios:
 
@@ -130,8 +99,6 @@ allowed("user_3", 1000)  -> True (old hits outside window)
 
 ## Part 4: Thread Safety
 
-### Problem
-
 In production, multiple threads may call `hit()` and `allowed()` simultaneously. Your code must handle concurrent access without data corruption.
 
 ### Race Condition Example
@@ -150,20 +117,7 @@ In production, multiple threads may call `hit()` and `allowed()` simultaneously.
 
 1. Concurrent calls for the same key must work correctly
 2. Prevent data corruption
-3. Minimize lock contention for performance
-
-### Approaches to Consider
-
-| Approach | Pros | Cons |
-|----------|------|------|
-| Global Lock | Simple, correct | Slow with many users |
-| Per-Key Lock | Good parallelism | More memory for locks |
-| Read-Write Lock | Fast reads | Complex implementation |
-| Atomic Check-and-Hit | Prevents race condition | Combines two operations |
-
-### Atomic Check-and-Hit
-
-Consider implementing a combined operation:
+3. Consider implementing an atomic `check_and_hit` operation:
 
 ```python
 def check_and_hit(self, key: str, timestamp: int) -> bool:
@@ -176,33 +130,11 @@ def check_and_hit(self, key: str, timestamp: int) -> bool:
 
 ---
 
-## Test Format
+## Constraints
 
-Tests will execute a series of operations and verify the return values.
-
-### Input Format
-
-Each test provides:
-- `config`: Dict with `max_requests` and `window_seconds`
-- `operations`: List of tuples `(operation, key, timestamp)`
-- Operations are: `"hit"`, `"allowed"`, or `"check_and_hit"` (Part 4)
-
-### Output Format
-
-List of results for operations that return values (`allowed`, `check_and_hit`).
-`hit` operations return `None` and are not included in results.
-
-### Sample Input/Output
-
-```python
-config = {"max_requests": 3, "window_seconds": 10}
-operations = [
-    ("hit", "user_1", 1),
-    ("hit", "user_1", 2),
-    ("allowed", "user_1", 3),
-    ("hit", "user_1", 3),
-    ("allowed", "user_1", 4),
-    ("allowed", "user_1", 12),
-]
-expected = [True, False, True]
-```
+- Timestamps are positive integers (seconds)
+- Keys are non-empty strings
+- `hit()` records requests even if over the limit
+- `allowed()` checks past hits, not including the current request
+- 1 ≤ max_requests ≤ 10^6
+- 1 ≤ window_seconds ≤ 10^6

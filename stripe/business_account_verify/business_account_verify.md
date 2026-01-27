@@ -47,8 +47,6 @@ For Part 5, use specific error codes instead of "NOT VERIFIED".
 
 ## Part 1: Check for Missing Fields
 
-### Description
-
 A business is VERIFIED only if **all 6 fields** contain non-empty data. Fields containing only whitespace are considered empty.
 
 ### Sample Input
@@ -70,17 +68,9 @@ NOT VERIFIED:
 VERIFIED: Tech Solutions
 ```
 
-### Rules
-
-- Strip whitespace before checking if field is empty
-- All 6 columns must have non-empty values
-- If business name (col2) is empty, output shows empty name
-
 ---
 
 ## Part 2: Check Description Length
-
-### Description
 
 The Full Description (col5) must be between **5 and 31 characters** (inclusive) after stripping whitespace.
 
@@ -103,23 +93,9 @@ NOT VERIFIED: Oakridge Furniture
 NOT VERIFIED: Tech Solutions
 ```
 
-### Explanation
-
-- BIZ001: "PAWSOME PETS INC" = 16 chars ✓
-- BIZ002: "Bean" = 4 chars (too short) ✗
-- BIZ003: 50 chars (too long) ✗
-- BIZ004: "ITCS" = 4 chars (too short) ✗
-
-### Rules
-
-- Check length after Part 1 validation passes
-- 5 ≤ length ≤ 31
-
 ---
 
 ## Part 3: Block Generic Names
-
-### Description
 
 Block businesses using generic terms in the Full Description (col5). The following terms are **blocked** (case-insensitive):
 
@@ -148,24 +124,15 @@ VERIFIED: Northwest Tech
 VERIFIED: Sweet Dreams
 ```
 
-### Rules
-
-- Check col5 for blocked terms (substring match)
-- Case-insensitive comparison
-- Only check col5, not other columns
-
 ---
 
 ## Part 4: Match Business Names
 
-### Description
-
 At least **50% of words** in the Business Name (col2) must appear in either the Short Description (col4) or Full Description (col5).
 
-**Word Processing:**
 - Split by whitespace
-- Remove "LLC" and "Inc" (case-insensitive)
-- Case-insensitive comparison
+- Remove "LLC" and "Inc" before comparison (case-insensitive)
+- Case-insensitive word comparison
 
 ### Sample Input
 
@@ -186,23 +153,9 @@ VERIFIED: Maple Ridge Bakery
 VERIFIED: Innovation Labs Inc
 ```
 
-### Explanation
-
-- BIZ001: "land", "water" → both found → 100% ✓
-- BIZ002: "Acme", "Global", "Trading" → only "Acme" found → 33% ✗
-- BIZ003: "Maple", "Ridge", "Bakery" → all found → 100% ✓
-- BIZ004: "Innovation", "Labs" (Inc removed) → both found → 100% ✓
-
-### Rules
-
-- Combine words from col4 and col5 for matching
-- Match percentage ≥ 50%
-
 ---
 
 ## Part 5: Specific Error Codes
-
-### Description
 
 Return specific error codes instead of "NOT VERIFIED". Check in this order and return the **first** error found:
 
@@ -240,15 +193,6 @@ ERROR_NAME_MISMATCH: Mismatched Corp
 
 ```python
 def validate_businesses(csv_data: str) -> str:
-    """
-    Validate business accounts from CSV data.
-
-    Args:
-        csv_data: CSV string with header row and business data
-
-    Returns:
-        String with one line per business showing validation result
-    """
     pass
 ```
 
@@ -259,13 +203,3 @@ def validate_businesses(csv_data: str) -> str:
 - 1 ≤ number of business rows ≤ 10^4
 - Each field length ≤ 1000 characters
 - CSV is well-formed (no escaped commas within fields)
-- Business names contain only alphanumeric characters, spaces, and common punctuation
-
----
-
-## Notes
-
-- Process rows in order, output in same order
-- Apply validations in the order specified (Part 1 → 2 → 3 → 4)
-- For Part 5, stop at first error found
-- All string comparisons for blocked terms and name matching are case-insensitive

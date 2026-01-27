@@ -6,12 +6,17 @@ Part 2: Reject overdrafts, return balances + rejected list
 Part 3: Platform covers shortfalls, return total coverage amount
 """
 
+from collections import defaultdict
 from typing import List, Dict, Tuple
 
 # Change this import to test different parts
 from inputs1 import transactions, part
+
 # from inputs2 import transactions, part
 # from inputs3 import transactions, part, platform_account_id
+
+
+_act_bal = defaultdict(int)
 
 
 def get_account_balances(transactions: List[Dict]) -> Dict[str, int]:
@@ -63,6 +68,7 @@ if __name__ == "__main__":
 
     elif part == 3:
         from inputs3 import platform_account_id
+
         total_coverage = process_with_coverage(transactions, platform_account_id)
         print(f"Total coverage: {total_coverage}")
         # Expected: 130
