@@ -14,3 +14,5 @@ BIZ002,Bean Bliss Coffee,beanbliss.com,,,Artisan coffee roasters
 BIZ003,Short Name,short.com,Short,SHRT,Products
 BIZ004,Generic Store,generic.com,Store,RETAIL,Various items
 BIZ005,Mismatched Corp,mismatch.com,Wrong,DIFFERENT BUSINESS,Services"""
+
+is_input5 = True
