@@ -7,8 +7,7 @@ Strategy:
 - Part 3 (~15 min): Add DISPUTE handling
 - Buffer (~20 min): Debug, edge cases
 
-Key insight: Don't create helper functions with 10 parameters.
-Keep everything in one place where you can see it.
+Key insight: Use multiple simple dicts, not nested dicts with string keys.
 """
 
 from typing import List
@@ -22,11 +21,11 @@ def find_fraudulent_merchants(
     min_charges: str,
     charges: List[str],
 ) -> str:
-    # Parse inputs into sets/dicts
+    # Parse inputs
     fraud_set = set(fraud_codes.split(","))
     min_txns = int(min_charges)
 
-    # MCC -> threshold (could be int or float)
+    # MCC -> threshold
     thresholds = {}
     use_ratio = False
     for row in mcc_thresholds:
@@ -36,31 +35,33 @@ def find_fraudulent_merchants(
         if thresh_val < 1:
             use_ratio = True
 
-    # Merchant -> MCC mapping
+    # Merchant -> MCC
     merchant_mcc = {}
     for row in merchant_mcc_map:
         acct, mcc = row.split(",")
         merchant_mcc[acct] = mcc
 
-    # Track state per merchant
-    merchants = {}  # acct -> {"total": int, "fraud": int, "flagged": bool}
+    # Merchant data - parallel dicts
+    m_total = {}    # acct -> total charge count
+    m_fraud = {}    # acct -> fraud charge count
+    m_flagged = {}  # acct -> is flagged as fraudulent
 
-    # Track charges for DISPUTE lookups
-    charge_info = {}  # charge_id -> {"acct": str, "was_fraud": bool}
+    # Charge data - parallel dicts
+    c_acct = {}     # charge_id -> merchant acct
+    c_was_fraud = {} # charge_id -> was this a fraud code
 
     def check_fraud(acct):
-        """Check if merchant should be flagged as fraudulent."""
-        m = merchants[acct]
-        if m["total"] < min_txns:
+        """Check if merchant should be flagged."""
+        if m_total[acct] < min_txns:
             return False
         thresh = thresholds[merchant_mcc[acct]]
         if use_ratio:
-            ratio = m["fraud"] / m["total"] if m["total"] > 0 else 0
+            ratio = m_fraud[acct] / m_total[acct] if m_total[acct] > 0 else 0
             return ratio >= thresh
         else:
-            return m["fraud"] >= thresh
+            return m_fraud[acct] >= thresh
 
-    # Process each event
+    # Process events
     for event in charges:
         parts = event.split(",")
         event_type = parts[0]
@@ -69,38 +70,39 @@ def find_fraudulent_merchants(
             _, charge_id, acct, amount, code = parts
             is_fraud = code in fraud_set
 
-            # Initialize merchant if first time seeing
-            if acct not in merchants:
-                merchants[acct] = {"total": 0, "fraud": 0, "flagged": False}
+            # Initialize merchant if new
+            if acct not in m_total:
+                m_total[acct] = 0
+                m_fraud[acct] = 0
+                m_flagged[acct] = False
 
             # Update counts
-            merchants[acct]["total"] += 1
+            m_total[acct] += 1
             if is_fraud:
-                merchants[acct]["fraud"] += 1
+                m_fraud[acct] += 1
 
-            # Track charge for potential DISPUTE
-            charge_info[charge_id] = {"acct": acct, "was_fraud": is_fraud}
+            # Track charge for DISPUTE
+            c_acct[charge_id] = acct
+            c_was_fraud[charge_id] = is_fraud
 
             # Check if now fraudulent
             if check_fraud(acct):
-                merchants[acct]["flagged"] = True
+                m_flagged[acct] = True
 
         elif event_type == "DISPUTE":
             _, charge_id = parts
-            info = charge_info[charge_id]
-            acct = info["acct"]
+            acct = c_acct[charge_id]
 
-            # Only matters if the original charge was fraudulent
-            if info["was_fraud"]:
-                # Move from fraud to non-fraud
-                merchants[acct]["fraud"] -= 1
-                info["was_fraud"] = False  # Can't dispute twice
+            # Only matters if original was fraud
+            if c_was_fraud[charge_id]:
+                m_fraud[acct] -= 1
+                c_was_fraud[charge_id] = False  # Can't dispute twice
 
-                # Re-check fraud status (can be restored to non-fraud)
-                merchants[acct]["flagged"] = check_fraud(acct)
+                # Re-check (can be restored to non-fraud)
+                m_flagged[acct] = check_fraud(acct)
 
-    # Collect fraudulent merchants
-    result = [acct for acct in merchants if merchants[acct]["flagged"]]
+    # Collect flagged merchants
+    result = [acct for acct in m_flagged if m_flagged[acct]]
     return ",".join(sorted(result))
 
 

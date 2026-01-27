@@ -8,12 +8,13 @@ Strategy:
 - Part 4 (~15 min): Add timestamps and timeout logic
 - Buffer (~20 min): Debug, edge cases, testing
 
-Key insight: Don't over-engineer. Use simple dicts, add features incrementally.
+Key insight: Use multiple simple dicts, not nested dicts with string keys.
 """
 
 from typing import List
+from collections import defaultdict
 
-# Status constants - simple integers, fast to type
+# Status constants
 REQUIRE_ACTION = 0
 PROCESSING = 1
 SUCCEEDED = 2
@@ -21,11 +22,16 @@ REFUNDED = 3
 
 
 def execute(commands: List[str], part: int) -> List[str]:
-    # Simple dicts - don't overthink data structures
-    merchants = {}  # mid -> {"balance": int, "payments": [], "timeout": int|None}
-    payments = (
-        {}
-    )  # pid -> {"mid": str, "amount": int, "status": int, "succeed_time": int}
+    # Merchant data - parallel dicts
+    m_balance = {}      # mid -> balance
+    m_payments = defaultdict(list)  # mid -> [pids]
+    m_timeout = {}      # mid -> timeout (None = unlimited)
+
+    # Payment data - parallel dicts
+    p_mid = {}          # pid -> merchant id
+    p_amount = {}       # pid -> amount
+    p_status = {}       # pid -> status constant
+    p_succeed_time = {} # pid -> time when succeeded
 
     # Detect timed vs non-timed format
     has_time = commands[0].split()[0].isdigit()
@@ -44,95 +50,89 @@ def execute(commands: List[str], part: int) -> List[str]:
         if action == "INIT":
             mid, balance = args[0], int(args[1])
             timeout = int(args[2]) if len(args) > 2 else None
-            # Negative timeout = unlimited
             if timeout is not None and timeout < 0:
                 timeout = None
-            merchants[mid] = {"balance": balance, "payments": [], "timeout": timeout}
+            m_balance[mid] = balance
+            m_timeout[mid] = timeout
 
         # CREATE: pid, mid, amount
         elif action == "CREATE":
             pid, mid, amount = args[0], args[1], int(args[2])
-            # Validate: merchant exists, payment doesn't exist, amount > 0
-            if mid not in merchants:
+            if mid not in m_balance:
                 continue
-            if pid in payments:
+            if pid in p_mid:
                 continue
             if amount <= 0:
                 continue
-            payments[pid] = {
-                "mid": mid,
-                "amount": amount,
-                "status": REQUIRE_ACTION,
-                "succeed_time": None,
-            }
-            merchants[mid]["payments"].append(pid)
+            p_mid[pid] = mid
+            p_amount[pid] = amount
+            p_status[pid] = REQUIRE_ACTION
+            m_payments[mid].append(pid)
 
         # ATTEMPT: pid
         elif action == "ATTEMPT":
             pid = args[0]
-            if pid not in payments:
+            if pid not in p_mid:
                 continue
-            if payments[pid]["status"] != REQUIRE_ACTION:
+            if p_status[pid] != REQUIRE_ACTION:
                 continue
-            payments[pid]["status"] = PROCESSING
+            p_status[pid] = PROCESSING
 
         # SUCCEED: pid
         elif action == "SUCCEED":
             pid = args[0]
-            if pid not in payments:
+            if pid not in p_mid:
                 continue
-            if payments[pid]["status"] != PROCESSING:
+            if p_status[pid] != PROCESSING:
                 continue
-            payments[pid]["status"] = SUCCEEDED
-            payments[pid]["succeed_time"] = time  # For Part 4
+            p_status[pid] = SUCCEEDED
+            p_succeed_time[pid] = time
 
         # FAIL: pid (Part 3)
         elif action == "FAIL":
             pid = args[0]
-            if pid not in payments:
+            if pid not in p_mid:
                 continue
-            if payments[pid]["status"] != PROCESSING:
+            if p_status[pid] != PROCESSING:
                 continue
-            payments[pid]["status"] = REQUIRE_ACTION  # Back to start
+            p_status[pid] = REQUIRE_ACTION
 
         # UPDATE: pid, new_amount (Part 2)
         elif action == "UPDATE":
             pid, new_amount = args[0], int(args[1])
-            if pid not in payments:
+            if pid not in p_mid:
                 continue
-            if payments[pid]["status"] != REQUIRE_ACTION:
+            if p_status[pid] != REQUIRE_ACTION:
                 continue
             if new_amount < 0:
                 continue
-            payments[pid]["amount"] = new_amount
+            p_amount[pid] = new_amount
 
         # REFUND: pid (Part 3 & 4)
         elif action == "REFUND":
             pid = args[0]
-            if pid not in payments:
+            if pid not in p_mid:
                 continue
-            if payments[pid]["status"] != SUCCEEDED:
+            if p_status[pid] != SUCCEEDED:
                 continue
 
             # Part 4: Check timeout window
             if has_time:
-                mid = payments[pid]["mid"]
-                timeout = merchants[mid]["timeout"]
-                succeed_time = payments[pid]["succeed_time"]
-                # If timeout is set (not None), check if we're past the window
+                mid = p_mid[pid]
+                timeout = m_timeout[mid]
                 if timeout is not None:
-                    if succeed_time + timeout < time:
-                        continue  # Too late to refund
+                    if p_succeed_time[pid] + timeout < time:
+                        continue
 
-            payments[pid]["status"] = REFUNDED
+            p_status[pid] = REFUNDED
 
     # Calculate final balances
     result = []
-    for mid in sorted(merchants.keys()):
-        balance = merchants[mid]["balance"]
-        for pid in merchants[mid]["payments"]:
-            if payments[pid]["status"] == SUCCEEDED:
-                balance += payments[pid]["amount"]
+    for mid in sorted(m_balance.keys()):
+        balance = m_balance[mid]
+        for pid in m_payments[mid]:
+            if p_status[pid] == SUCCEEDED:
+                balance += p_amount[pid]
         result.append(f"{mid} {balance}")
 
     return result
