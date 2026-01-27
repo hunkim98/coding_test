@@ -1,0 +1,58 @@
+# Part 4: Handle Disputes
+# Add dispute handling to reconciliation
+
+part = 4
+
+clearing_1 = [
+    "0000000000000000000001,00000001704067200000,0000050000,usd",
+    "0000000000000000000002,00000001704067200001,0000030000,usd",
+    "0000000000000000000003,00000001704067200002,0000020000,usd"
+]
+
+bank_transactions_1 = [
+    "A1B2C3D4,00000001704067300000,0000100000,usd"
+]
+
+disputes_1 = [
+    "A1B2C3D4,0000000000000000000002,0000030000,usd"  # Payment 2 is disputed
+]
+
+# Payment 1: SETTLED, Payment 2: DISPUTE, Payment 3: SETTLED
+expected_1 = """0000000000000000000001,SETTLED,A1B2C3D4
+0000000000000000000002,DISPUTE,A1B2C3D4
+0000000000000000000003,SETTLED,A1B2C3D4"""
+
+# Test case 2: Multiple disputes
+clearing_2 = [
+    "0000000000000000000001,00000001704067200000,0000010000,usd",
+    "0000000000000000000002,00000001704067200001,0000020000,usd",
+    "0000000000000000000003,00000001704067200002,0000030000,usd"
+]
+
+bank_transactions_2 = [
+    "CAFEBABE,00000001704067300000,0000060000,usd"
+]
+
+disputes_2 = [
+    "CAFEBABE,0000000000000000000001,0000010000,usd",
+    "CAFEBABE,0000000000000000000003,0000030000,usd"
+]
+
+expected_2 = """0000000000000000000001,DISPUTE,CAFEBABE
+0000000000000000000002,SETTLED,CAFEBABE
+0000000000000000000003,DISPUTE,CAFEBABE"""
+
+test_cases = [
+    {
+        "clearing": clearing_1,
+        "bank": bank_transactions_1,
+        "disputes": disputes_1,
+        "expected": expected_1
+    },
+    {
+        "clearing": clearing_2,
+        "bank": bank_transactions_2,
+        "disputes": disputes_2,
+        "expected": expected_2
+    },
+]

@@ -1,0 +1,29 @@
+{
+    "landmarks": [
+        {
+            "place": "Dearborn Park",
+            "latitude": 47.552376,
+            "longitude": -122.294496
+        },
+        {
+            "place": "The Flora Bakehouse",
+            "latitude": 47.553513,
+            "longitude": -122.311713
+        },
+        {
+            "place": "Urban Feed and Garden",
+            "latitude": 47.558956,
+            "longitude": -122.303102
+        },
+        {
+            "place": "Beacon Hill Station",
+            "latitude": 47.579443,
+            "longitude": -122.311148
+        },
+        {
+            "place": "King Street Station",
+            "latitude": 47.59875,
+            "longitude": -122.328258
+        }
+    ]
+}
