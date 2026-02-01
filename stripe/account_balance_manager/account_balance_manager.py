@@ -10,13 +10,11 @@ from collections import defaultdict
 from typing import List, Dict, Tuple
 
 # Change this import to test different parts
-from inputs1 import transactions, part
+# from inputs1 import transactions, part
 
 # from inputs2 import transactions, part
-# from inputs3 import transactions, part, platform_account_id
 
-
-_act_bal = defaultdict(int)
+from inputs3 import transactions, part, platform_account_id
 
 
 def get_account_balances(transactions: List[Dict]) -> Dict[str, int]:
@@ -27,7 +25,16 @@ def get_account_balances(transactions: List[Dict]) -> Dict[str, int]:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    _act_bal = defaultdict(int)
+    _act_user = defaultdict()
+    for t in transactions:
+        act_id = t["account_id"]
+        amt = t["amount"]
+        if _act_bal[act_id] + amt >= 0:
+            _act_bal[act_id] += amt
+        if _act_bal[act_id] == 0:
+            del _act_bal[act_id]
+    return _act_bal
 
 
 def process_transactions(transactions: List[Dict]) -> Tuple[Dict[str, int], List[Dict]]:
@@ -38,6 +45,18 @@ def process_transactions(transactions: List[Dict]) -> Tuple[Dict[str, int], List
     # -----------------------------
     # Your implementation here
     # -----------------------------
+    _act_bal = defaultdict(int)
+    _act_user = defaultdict()
+    _cancel_ts = []
+    for t in transactions:
+        act_id = t["account_id"]
+        amt = t["amount"]
+        if _act_bal[act_id] + amt >= 0:
+            _act_bal[act_id] += amt
+        else:
+            # reject but add to _cancel_ts
+            _cancel_ts.append(t)
+    return _act_bal, _cancel_ts
     pass
 
 
@@ -49,7 +68,23 @@ def process_with_coverage(transactions: List[Dict], platform_account_id: str) ->
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    _act_bal = defaultdict(int)
+    _act_user = defaultdict()
+    _platform = defaultdict(int)
+    _acc_pay = 0
+    for t in transactions:
+        act_id = t["account_id"]
+        amt = t["amount"]
+        if _act_bal[act_id] + amt >= 0:
+            _act_bal[act_id] += amt
+        else:
+            # we will get the platform fee of the platform_account_id
+            # reject but add to _cancel_ts
+            if _act_bal[platform_account_id] + amt + _act_bal[act_id] >= 0:
+                _act_bal[platform_account_id] += amt + _act_bal[act_id]
+                _acc_pay += -(amt + _act_bal[act_id])
+                _act_bal[act_id] = 0
+    return _acc_pay
 
 
 # Test runner

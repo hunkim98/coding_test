@@ -18,9 +18,9 @@ from typing import List, Set
 
 # from inputs3 import csv_data, part
 
-# from inputs4 import csv_data, part
+from inputs4 import csv_data, part
 
-from inputs5 import csv_data, part, is_input5
+# from inputs5 import csv_data, part, is_input5
 
 BLOCKED_DESC = [
     "ONLINE STORE",
@@ -60,12 +60,12 @@ def prune_char(text: str):
     pruned = text
     if " llc" in text.lower():
         start_i = text.lower().index(" llc")
-        end_i = start_i + 3
-        pruned = text[0 : start_i + 1] + text[end_i:]
-    if " inc" in text.lower():
-        start_i = text.lower().index(" inc")
-        end_i = start_i + 3
-        pruned = text[0 : start_i + 1] + text[end_i:]
+        end_i = start_i + 4
+        pruned = text[0:start_i] + text[end_i:]
+    if " inc" in pruned.lower():
+        start_i = pruned.lower().index(" inc")
+        end_i = start_i + 4
+        pruned = pruned[0:start_i] + pruned[end_i:]
     return pruned
 
 
@@ -74,8 +74,8 @@ def check_name(args) -> bool:
     if name is None:
         return False
     # remove LLC or Inc in name and desc
-    short_desc = args[4]
-    full_desc = args[5]
+    short_desc = args[3]
+    full_desc = args[4]
     p_name = prune_char(name)
     p_short_desc = prune_char(short_desc)
     p_full_desc = prune_char(full_desc)
@@ -87,8 +87,8 @@ def check_name(args) -> bool:
             p_short_desc.lower().index(word.lower())
             valid_cnt += 1
         except:
-            continue
-    if valid_cnt / len(name_words) > 0.5:
+            pass
+    if valid_cnt / len(name_words) >= 0.5:
         return True
 
     valid_cnt = 0
@@ -97,8 +97,9 @@ def check_name(args) -> bool:
             p_full_desc.lower().index(word.lower())
             valid_cnt += 1
         except:
-            continue
-    if valid_cnt / len(name_words) > 0.5:
+            pass
+
+    if valid_cnt / len(name_words) >= 0.5:
         return True
     return False
 

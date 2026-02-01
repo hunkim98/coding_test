@@ -11,10 +11,25 @@ from typing import Optional, Dict, List, Set, Tuple
 from collections import defaultdict
 
 # Change this import to test different phases
-from inputs1 import rates, test_cases, phase
+# from inputs1 import rates, test_cases, phase
+
 # from inputs2 import rates, test_cases, phase
+
 # from inputs3 import rates, test_cases, phase
-# from inputs4 import rates, test_cases, phase
+
+from inputs4 import rates, test_cases, phase
+
+
+class CurrencyNode:
+    curr_str: str
+    rates: {}
+
+    def __init__(self, curr_str):
+        self.curr_str = curr_str
+        self.rates = {}
+
+    def add_conn(self, conn_curr, rate):
+        self.rates[conn_curr] = rate
 
 
 class CurrencyConverter:
@@ -28,68 +43,63 @@ class CurrencyConverter:
         # -----------------------------
         # Your implementation here
         # -----------------------------
-        self.rates = {}  # For Phase 1-2: rates[from][to] = rate
-        self.graph = defaultdict(list)  # For Phase 3-4: adjacency list
+        self.rates = defaultdict(lambda: {})
+        self.collection = {}
+        self.graph: list[list] = []  # For Phase 3-4: adjacency list
         self._parse_rates(rate_string)
 
-    def _parse_rates(self, rate_string: str):
-        """Parse the rate string into data structures."""
-        # -----------------------------
-        # Your implementation here
-        # -----------------------------
-        pass
+    def _parse_rates(self, rate_string):
+        infos = rate_string.split(",")
+        for info in infos:
+            args = info.split(":")
+            cur1 = args[0]
+            cur2 = args[1]
+            cur1_to_cur2 = float(args[2])
+            self.rates[cur1][cur2] = cur1_to_cur2
+            self.rates[cur2][cur1] = 1.0 / cur1_to_cur2
+            self.graph.append([cur1, cur2, cur1_to_cur2])
+            self.graph.append([cur2, cur1, 1.0 / cur1_to_cur2])
+        # construct a graph
+
+    def get_direct_rate(self, from_curr: str, to_curr: str):
+        if from_curr in self.rates:
+            if to_curr in self.rates[from_curr]:
+                return self.rates[from_curr][to_curr]
+        return None
 
     def getRate(self, from_curr: str, to_curr: str) -> Optional[float]:
         """
-        Get the exchange rate from one currency to another.
-
-        Args:
-            from_curr: Source currency code
-            to_curr: Target currency code
-
-        Returns:
-            Exchange rate as float, or None if not possible
+        Get the exchange rate for a currency pair.
         """
-        # -----------------------------
-        # Your implementation here
-        # -----------------------------
-        pass
+        if from_curr == to_curr:
+            return 1.0
+        if from_curr not in self.rates or to_curr not in self.rates:
+            return None
+        cand_rate = self.get_direct_rate(from_curr=from_curr, to_curr=to_curr)
+        if cand_rate is not None:
+            return cand_rate
+        # bellman ford
 
-    def _get_direct_rate(self, from_curr: str, to_curr: str) -> Optional[float]:
-        """
-        Phase 1: Get direct or reverse rate.
-
-        Returns:
-            Rate if direct connection exists, None otherwise
-        """
-        # -----------------------------
-        # Your implementation here
-        # -----------------------------
-        pass
-
-    def _get_one_step_rate(self, from_curr: str, to_curr: str) -> Optional[float]:
-        """
-        Phase 2: Get rate through one intermediate currency.
-
-        Returns:
-            Rate if one-step path exists, None otherwise
-        """
-        # -----------------------------
-        # Your implementation here
-        # -----------------------------
-        pass
-
-    def _get_best_rate_bfs(self, from_curr: str, to_curr: str) -> Optional[float]:
-        """
-        Phase 3-4: Find best rate using BFS/DFS.
-
-        Returns:
-            Best (maximum) rate among all paths, None if not connected
-        """
-        # -----------------------------
-        # Your implementation here
-        # -----------------------------
-        pass
+        V = len(set(self.rates.keys()))
+        best = defaultdict(float)
+        best[from_curr] = 1.0
+        for _ in range(V - 1):
+            new_best = best.copy()
+            # we will do on each
+            updated = False
+            for u, v, r in self.graph:
+                if best[u] == 0:
+                    continue
+                candidate = best[u] * r
+                if candidate > new_best[v]:
+                    new_best[v] = candidate
+                    updated = True
+            if not updated:
+                break
+            best = new_best
+        if best[to_curr] == 0.0:
+            return None
+        return best[to_curr]
 
 
 def run_tests(converter: CurrencyConverter, test_cases: List[Tuple]):
