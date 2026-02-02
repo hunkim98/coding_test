@@ -7,13 +7,17 @@ Part 3: Reconcile with bank transactions
 Part 4: Handle disputes
 """
 
+from collections import defaultdict
 import json
 from typing import List, Dict, Tuple
 
 # Change this import to test different parts
 from inputs1 import test_cases, part
-# from inputs2 import test_cases, part
-# from inputs3 import test_cases, part
+
+from inputs2 import test_cases, part
+
+from inputs3 import test_cases, part
+
 # from inputs4 import test_cases, part
 
 
@@ -30,7 +34,26 @@ def parse_payments(json_str: str) -> Dict:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    items = json.loads(json_str)
+    total = 0
+    mid_amt = defaultdict(int)
+    cur_amt = defaultdict(int)
+    for item in items:
+        mid = item["merchant"]
+        amt = int(item["amt"])
+        cur = item["currency"]
+        total += amt
+        mid_amt[mid] += amt
+        cur_amt[cur] += amt
+
+    cnt = len(items)
+
+    return {
+        "count": cnt,
+        "total": total,
+        "by_merchant": mid_amt,
+        "by_currency": cur_amt,
+    }
 
 
 def generate_clearing_file(payments: List[Dict], start_timestamp: int) -> str:
@@ -53,7 +76,22 @@ def generate_clearing_file(payments: List[Dict], start_timestamp: int) -> str:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    result = ""
+    arn = 1
+    for item in payments:
+        mid = item["merchant"]
+        amt = item["amt"]
+        cur = item["currency"]
+        r_arn = "0" * (22 - len(str(arn))) + str(arn)
+        t = "0" * (20 - len(str(start_timestamp + arn - 1))) + str(
+            start_timestamp + arn - 1
+        )
+        amt = "0" * (10 - len(str(amt))) + str(amt)
+        result += f"{r_arn},{t},{amt},{cur}"
+        arn += 1
+        if arn != len(payments) + 1:
+            result += "\n"
+    return result
 
 
 def parse_clearing_entry(line: str) -> Tuple[str, int, int, str]:
@@ -96,13 +134,28 @@ def reconcile(clearing_entries: List[str], bank_transactions: List[str]) -> str:
     # -----------------------------
     # Your implementation here
     # -----------------------------
+
+    b_info = {}
+
+    for trans in bank_transactions:
+        args = trans.split(",")
+        t = int(args[1])
+        amt = int(args[2])
+        cur = args[3]
+        b_info[cur] = {"amt": amt, "t": t}
+
+    for entry in clearing_entries:
+        args = entry.split(",")
+        t = int(args[1])
+        amt = int(args[2])
+        cur = int(args[3])
+        is_settled = False
+
     pass
 
 
 def reconcile_with_disputes(
-    clearing_entries: List[str],
-    bank_transactions: List[str],
-    disputes: List[str]
+    clearing_entries: List[str], bank_transactions: List[str], disputes: List[str]
 ) -> str:
     """
     Part 4: Reconcile with dispute handling.
@@ -141,9 +194,7 @@ def run_tests():
             expected = tc["expected"]
             passed = result == expected
         elif part == 4:
-            result = reconcile_with_disputes(
-                tc["clearing"], tc["bank"], tc["disputes"]
-            )
+            result = reconcile_with_disputes(tc["clearing"], tc["bank"], tc["disputes"])
             expected = tc["expected"]
             passed = result == expected
         else:
