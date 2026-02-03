@@ -10,8 +10,10 @@ from typing import List, Dict
 
 # Change this import to test different parts
 from inputs1 import *
-# from inputs2 import *
-# from inputs3 import *
+
+from inputs2 import *
+
+from inputs3 import *
 
 
 def render_character(grid: List[str]) -> List[str]:
@@ -27,7 +29,19 @@ def render_character(grid: List[str]) -> List[str]:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    result = []
+    for row in grid:
+        r_row = []
+        for col in row:
+            if col == "0":
+                r_row.append(".")
+            elif col == "1":
+                r_row.append("#")
+            else:
+                raise Exception("Unrecognized char")
+        result.append(r_row)
+
+    return result
 
 
 def render_word(text: str, font: Dict) -> List[str]:
@@ -44,7 +58,38 @@ def render_word(text: str, font: Dict) -> List[str]:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    # let us look through the tallest and we will prepend
+    tallest_row = 0
+    for fkey in font["chars"]:
+        char = font["chars"][fkey]
+        char_h = len(char)
+        if char_h > tallest_row:
+            tallest_row = char_h
+
+    unified_font: Dict = {}
+    for fkey in font["chars"].keys():
+        char = font["chars"][fkey]
+        char_h = len(char)
+        new_char = font["chars"][fkey]
+        if char_h < tallest_row:
+            new_char = ([] * (tallest_row - char_h)).extend(font["chars"][fkey])
+        unified_font[fkey] = new_char
+
+    result = []
+    for i in range(tallest_row):
+        r_row = []
+        for fkey in text:
+            char = unified_font[fkey]
+            char_row = char[i]
+            for col in char_row:
+                if col == "0":
+                    r_row.append(".")
+                elif col == "1":
+                    r_row.append("#")
+                else:
+                    raise Exception("Unrecognized char")
+        result.append(r_row)
+    return result
 
 
 def decode_rle(encoded_rows: List[str]) -> List[str]:
@@ -65,7 +110,38 @@ def decode_rle(encoded_rows: List[str]) -> List[str]:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    decoded = []
+    for row in encoded_rows:
+        is_zero = True
+        d_row = ""
+        # print(row, "start")
+        for col in row:
+            occ = None
+            if col == "0":
+                occ = 0
+            elif not col.isdigit():
+                occ = ord(col) + 10
+                occ -= ord("a")
+            else:
+                occ = int(col)
+
+            if occ != 0:
+                if is_zero:
+                    d_row += "0" * occ
+                else:
+                    d_row += "1" * occ
+            is_zero = not is_zero
+        # print(d_row, "0" * 0)
+        decoded.append(d_row)
+    max_width = max(len(row) for row in decoded)
+    result = []
+    for row in decoded:
+        new_row = row
+        if len(row) != max_width:
+            new_row += "0" * (max_width - len(row))
+        result.append(new_row)
+
+    return result
 
 
 def render_word_rle(text: str, font: Dict) -> List[str]:
@@ -82,7 +158,14 @@ def render_word_rle(text: str, font: Dict) -> List[str]:
     # -----------------------------
     # Your implementation here
     # -----------------------------
-    pass
+    decoded_font = {}
+    for fkey in font["chars"]:
+        char = font["chars"][fkey]
+        decoded = decode_rle(char)
+        decoded_font[fkey] = decoded
+
+    font["chars"] = decoded_font
+    return render_word(text, font)
 
 
 # Test runner
